@@ -30,8 +30,8 @@ echo ""
 
 # Install prerequisites
 
-ls appdir-lint.sh >/dev/null || wget -c https://github.com/AppImage/AppImages/raw/master/appdir-lint.sh
-ls excludelist >/dev/null || wget -c https://github.com/AppImage/AppImages/raw/master/excludelist
+ls appdir-lint.sh >/dev/null || wget -c https://github.com/AppImageCommunity/pkg2appimage/raw/master/appdir-lint.sh
+ls excludelist >/dev/null || wget -c https://github.com/AppImageCommunity/pkg2appimage/raw/master/excludelist
 
 # Make sure we always use http because httpfs2 doesn't like https
 APPIMAGEURL=$(echo "${APPIMAGEURL}" | sed -e 's|https://|http://|g')
@@ -57,7 +57,7 @@ bash appdir-lint.sh mnt2
 
 # TODO: Get Update Information embedded in the AppImage,
 # we want to use this for the AppStream <bundle> tag
-# https://github.com/AppImage/AppImageSpec/blob/master/draft.md#updateinformation
+# https://github.com/AppImageCommunity/pkg2appimagepec/blob/master/draft.md#updateinformation
 
 # If there is no Update Information embedded in the AppImage, then we use the 
 # download URL for the AppStream <bundle> tag

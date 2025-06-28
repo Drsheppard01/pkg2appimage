@@ -1,7 +1,7 @@
 # This file is supposed to be sourced by each Recipe
 # that wants to use the functions contained herein
 # like so:
-# wget -q https://github.com/AppImage/AppImages/raw/${PKG2AICOMMIT}/functions.sh -O ./functions.sh
+# wget -q https://github.com/AppImageCommunity/pkg2appimage/raw/${PKG2AICOMMIT}/functions.sh -O ./functions.sh
 # . ./functions.sh
 
 # RECIPE=$(realpath "$0")
@@ -292,7 +292,7 @@ generate_status()
   if [ -e "${HERE}/usr/share/pkg2appimage/excludedeblist" ]  ; then
     EXCLUDEDEBLIST="${HERE}/usr/share/pkg2appimage/excludedeblist"
   else
-    wget -q -c "https://github.com/AppImage/AppImages/raw/${PKG2AICOMMIT}/excludedeblist"
+    wget -q -c "https://github.com/AppImageCommunity/pkg2appimage/raw/${PKG2AICOMMIT}/excludedeblist"
     EXCLUDEDEBLIST=excludedeblist
   fi
   rm status 2>/dev/null || true
