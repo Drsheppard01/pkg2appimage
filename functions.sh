@@ -10,7 +10,8 @@
 # by using:
 # export PKG2AICOMMIT=<git sha>
 if [ -z "$PKG2AICOMMIT" ] ; then
-  PKG2AICOMMIT=master
+  PKG2AICOMMIT=new-type
+##  PKG2AICOMMIT=master
 fi
 
 # Options for apt-get to use local files rather than the system ones
@@ -65,15 +66,6 @@ case "$(uname -i)" in
     exit 1;;
 esac
 
-# Either get the file from remote or from a static place.
-# critical for builds without network access like in Open Build Service
-cat_file_from_url()
-{
-  cat_excludelist="wget -q $1 -O -"
-  [ -e "$STATIC_FILES/${1##*/}" ] && cat_excludelist="cat $STATIC_FILES/${1##*/}"
-  $cat_excludelist
-}
-
 git_pull_rebase_helper()
 {
   git reset --hard HEAD
@@ -90,9 +82,10 @@ patch_usr()
 
 # Download AppRun and make it executable
 get_apprun()
+### I'm not even sure I'm doing this right
 {
   TARGET_ARCH=${ARCH:-$SYSTEM_ARCH}
-  wget -c https://github.com/AppImage/AppImageKit/releases/download/continuous/AppRun-${TARGET_ARCH} -O AppRun
+  wget -c https://raw.githubusercontent.com/AppImage/appimagetool/refs/heads/main/resources/AppRun.sh -O AppRun
   chmod a+x AppRun
 }
 
@@ -121,90 +114,13 @@ move_lib()
   mkdir -p ./usr/lib ./lib64 && find ./lib64/ -exec cp -v --parents -rfL {} ./usr/ \; && rm -rf ./lib64
 }
 
-# Delete blacklisted files
-delete_blacklisted()
+# Do not bundle developer stuff
+delete_devfiles()
 {
-  BLACKLISTED_FILES=$(cat_file_from_url https://github.com/AppImage/pkg2appimage/raw/${PKG2AICOMMIT}/excludelist | sed 's|#.*||g')
-  echo $BLACKLISTED_FILES
-
-  local DOT_DIR=$(readlink -f .)
-  local TARGET
-  for FILE in $BLACKLISTED_FILES ; do
-    FILES="$(find . -name "${FILE}" -not -path "./usr/optional/*")"
-    for FOUND in $FILES ; do
-      TARGET=$(readlink -f "$FOUND")
-
-      # Only delete files from inside the current dir.
-      if [[ $TARGET = $DOT_DIR/* ]]; then
-        rm -vf "$TARGET"
-      fi
-
-      rm -vf "$FOUND"
-    done
-  done
-
-  # Do not bundle developer stuff
   rm -rf usr/include || true
   rm -rf usr/lib/cmake || true
   rm -rf usr/lib/pkgconfig || true
   find . -name '*.la' | xargs -i rm {}
-}
-
-# Echo highest glibc version needed by the executable files in the current directory
-glibc_needed()
-{
-  find . -name *.so -or -name *.so.* -or -type f -executable  -exec strings {} \; | grep ^GLIBC_2 | sed s/GLIBC_//g | sort --version-sort | uniq | tail -n 1
-  # find . -name *.so -or -name *.so.* -or -type f -executable  -exec readelf -s '{}' 2>/dev/null \; | sed -n 's/.*@GLIBC_//p'| awk '{print $1}' | sort --version-sort | tail -n 1
-}
-# Add desktop integration
-# Usage: get_desktopintegration name_of_desktop_file_and_exectuable
-get_desktopintegration()
-{
-  # REALBIN=$(grep -o "^Exec=.*" *.desktop | sed -e 's|Exec=||g' | cut -d " " -f 1 | head -n 1)
-  # cat_file_from_url https://raw.githubusercontent.com/AppImage/AppImageKit/deprecated/AppImageAssistant/desktopintegration > ./usr/bin/$REALBIN.wrapper
-  # chmod a+x ./usr/bin/$REALBIN.wrapper
-  echo "The desktopintegration script is deprecated. Please advise users to use https://github.com/AppImage/appimaged instead."
-  # sed -i -e "s|^Exec=$REALBIN|Exec=$REALBIN.wrapper|g" $1.desktop
-}
-
-# Generate AppImage; this expects $ARCH, $APP and $VERSION to be set
-generate_appimage()
-{
-  # Download AppImageAssistant
-  URL="https://github.com/AppImage/AppImageKit/releases/download/6/AppImageAssistant_6-${SYSTEM_ARCH}.AppImage"
-  wget -c "$URL" -O AppImageAssistant
-  chmod a+x ./AppImageAssistant
-
-  # if [[ "$RECIPE" == *ecipe ]] ; then
-  #   echo "#!/bin/bash -ex" > ./$APP.AppDir/Recipe
-  #   echo "# This recipe was used to generate this AppImage." >> ./$APP.AppDir/Recipe
-  #   echo "# See http://appimage.org for more information." >> ./$APP.AppDir/Recipe
-  #   echo "" >> ./$APP.AppDir/Recipe
-  #   cat $RECIPE >> ./$APP.AppDir/Recipe
-  # fi
-  #
-  # Detect the architecture of what we are packaging.
-  # The main binary could be a script, so let's use a .so library
-  BIN=$(find . -name *.so* -type f | head -n 1)
-  INFO=$(file "$BIN")
-  if [ -z $ARCH ] ; then
-    if [[ $INFO == *"x86-64"* ]] ; then
-      ARCH=x86_64
-    elif [[ $INFO == *"i686"* ]] ; then
-      ARCH=i686
-    elif [[ $INFO == *"armv6l"* ]] ; then
-      ARCH=armhf
-    else
-      echo "Could not automatically detect the architecture."
-      echo "Please set the \$ARCH environment variable."
-     exit 1
-    fi
-  fi
-
-  mkdir -p ../out || true
-  rm ../out/$APP"-"$VERSION".glibc"$GLIBC_NEEDED"-"$ARCH".AppImage" 2>/dev/null || true
-  GLIBC_NEEDED=$(glibc_needed)
-  ./AppImageAssistant ./$APP.AppDir/ ../out/$APP"-"$VERSION".glibc"$GLIBC_NEEDED"-"$ARCH".AppImage"
 }
 
 # Generate AppImage type 2

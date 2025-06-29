@@ -12,8 +12,6 @@ echo "Using git short revision: $GIT_SHORT_REV"
 mkdir -p build/
 
 cd build/
-## apt download -y apt libapt-pkg5.0 libbz2-1.0 liblzma5 multiarch-support zlib1g dpkg
-# apt download -y dpkg # We are still using dpkg-deb to extract debs, so we need to bundle it
 
 wget -c "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-$SYSTEM_ARCH.AppImage" # FIXME: Make arch independent
 chmod +x ./*.AppImage
@@ -21,7 +19,9 @@ chmod +x ./*.AppImage
 ./appimagetool-*.AppImage --appimage-extract && mv ./squashfs-root ./pkg2appimage.AppDir
 cd ./pkg2appimage.AppDir
 
-find ../*.deb -exec dpkg-deb -x {} . \; || true
+find *\.deb | xargs ar vx
+tar xJvf data.tar.xz
+rm debian-binary control.tar.xz data.tar.xz
 
 rm *.desktop || true
 mv ./usr/share/applications/appimagetool.desktop ./usr/share/applications/pkg2appimage.desktop
@@ -41,7 +41,6 @@ cp ./usr/share/applications/pkg2appimage.desktop .
 cp ../../pkg2appimage AppRun ; chmod + AppRun
 
 mkdir -p ./usr/share/pkg2appimage/
-cp ../../{functions.sh,excludelist,excludedeblist,appdir-lint.sh} ./usr/share/pkg2appimage/
 rm -rf ./usr/share/metainfo/* || true
 mkdir -p ./usr/share/metainfo
 cp ../../pkg2appimage.appdata.xml ./usr/share/metainfo/
