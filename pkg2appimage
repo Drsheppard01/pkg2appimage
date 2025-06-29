@@ -55,9 +55,6 @@ set -x
 
 # Check dependencies
 check_dependencies \
-  dpkg \
-  dpkg-deb \
-  convert \
   wget \
   grep \
   sed \
